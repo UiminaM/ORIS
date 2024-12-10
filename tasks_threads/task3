@@ -1,0 +1,31 @@
+import threading
+def factorial(start, end):
+    k = 1
+    for j in range(start, end):
+        k *= j
+
+    with lock:
+        res.append(k)
+
+lock = threading.Lock()
+res = []
+num = int(input("Введите число, факториал которого нужно найти: "))
+n = num // 10 if num // 10 > 0 else 1
+parts = num // n
+threads = []
+
+for i in range(n):
+    start = i * parts + 1
+    end = parts * (i + 1) + 1 if i < n - 1 else num + 1
+    th = threading.Thread(target=factorial, args=(start, end,))
+    th.start()
+    threads.append(th)
+
+for th in threads:
+    th.join()
+
+result = 1
+for i in res:
+    result *= i
+
+print(result)

@@ -1,0 +1,51 @@
+body {
+    background-color: #add8e6; /* Голубой фон */
+}
+
+form {
+    font: 14px Stem-Regular, arial, sans-serif;
+    border: none; /* Убираем рамку у формы */
+    -webkit-border-radius: 20px;
+    color: #777991;
+    width: 25%;
+    margin-right: auto;
+    margin-left: auto;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.8); /* Полупрозрачный белый фон */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Объемный эффект */
+}
+
+input[type=text], input[type=password] {
+    text-align: center;
+    -webkit-border-radius: 30px;
+    width: auto;
+    padding: 15px 20px;
+    margin: 10px 0;
+    margin-right: auto;
+    margin-left: auto;
+    display: block;
+    border: none; /* Убираем рамку у полей ввода */
+    box-sizing: border-box;
+    font: 14px Stem-Regular, arial, sans-serif;
+    color: #777991;
+}
+
+button {
+    font: 16px Stem-medium, arial, sans-serif;
+    background-color: #3354a6;
+    -webkit-border-radius: 30px;
+    color: white;
+    padding: 16px 20px;
+    margin: 8px 0;
+    border: none;
+    cursor: pointer;
+    width: auto;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.container {
+    padding: 20px;
+}

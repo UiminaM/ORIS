@@ -1,0 +1,20 @@
+body {
+    background-color: #add8e6;
+}
+
+form {
+    font: 14px Stem-Regular,arial, sans-serif;
+    border: none;
+    -webkit-border-radius: 20px;
+    color: #777991;
+    width: 25%;
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    margin-right: auto;
+    margin-left: auto;
+    text-align: center;
+}
+
+.container {
+    padding: 20px;
+}

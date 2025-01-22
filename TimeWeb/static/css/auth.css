@@ -49,3 +49,9 @@ button:hover {
 .container {
     padding: 20px;
 }
+
+.error-message {
+    color: red; /* Change to your desired color */
+    margin-bottom: 15px; /* Space below the error message */
+    font-weight: bold; /* Make it bold */
+}

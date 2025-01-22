@@ -1,0 +1,17 @@
+{% extends 'users.html' %}
+
+{% block content %}
+    <h1>Создать нового пользователя</h1>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="login" class="form-label">Логин</label>
+            <input class="form-control" type="text" id="login" name="login" required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Пароль</label>
+            <textarea class="form-control" id="password" name="password" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-success">Создать</button>
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Назад</a>
+    </form>
+{% endblock %}

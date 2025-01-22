@@ -1,0 +1,13 @@
+{% extends 'users.html' %}
+
+{% block content %}
+    <h1>Создать новый тэг</h1>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="tag" class="form-label">Название</label>
+            <input class="form-control" type="text" id="tag" name="tag" required>
+        </div>
+        <button type="submit" class="btn btn-success">Создать</button>
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Назад</a>
+    </form>
+{% endblock %}

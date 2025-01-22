@@ -1,3 +1,8 @@
+{% extends "base.html" %}
+
+{% block title %}Авторизация{% endblock %}
+
+{% block content %}
 <form method="POST">
   <div class="container">
     <label for="Login"><b>Логин</b></label>
@@ -6,9 +11,14 @@
     <label for="Password"><b>Пароль</b></label>
     <input type="password" placeholder="" name="Password" required>
     <button type="submit">Войти</button>
-   <div class="container">
+    <div class="container">
     <span class="reg"> <a href="/registration">Регистрация</a></span>
-  </div>
+    </div>
+      {% if error_message %}
+        <div class="error-message">{{ error_message }}</div>
+    {% endif %}
 </form>
 
 <link rel="stylesheet" href="{{ url_for('static', filename= 'css/auth.css') }}">
+
+{% endblock %}

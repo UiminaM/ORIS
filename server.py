@@ -2,13 +2,34 @@ import socket
 from threading import Thread
 import pickle
 import struct
+from queue import SimpleQueue
 import time
 
-class PlayerThread(Thread):
-    def __init__(self, sock, addr):
+class GameRoom:
+    def __init__(self, players):
+        self.players = players
+        self.used_words = []
+        self.broadcast('start_game', list(players.keys()))
+
+    def broadcast(self, type, message="", exclude_client=None):
+        for player in list(self.players.values()):
+            if player != exclude_client:
+                try:
+                    ser_data = pickle.dumps({'type': type, 'body': message})
+                    player.send(ser_data)
+                except Exception as e:
+                    print(f"Error sending message: {e}")
+
+    def end_game(self):
+        self.used_words.clear()
+        self.players.clear()
+
+class ClientThread(Thread):
+    def __init__(self, sock, addr, server):
         super().__init__()
         self.sock = sock
         self.addr = addr
+        self.server = server
         self.name = ''
         self.room = None
         self.start()
@@ -19,18 +40,11 @@ class PlayerThread(Thread):
             if not data:
                 break
             data = pickle.loads(data)
+            print(data['type'])
             match data['type']:
-                case 'name':
-                    self.name = data['body']
-                    if self.name in self.server.all_players:
-                        if self.server.all_players[self.name]:
-                            self.send_pickle({'type': 'ban'})
-                    else:
-                        self.server.all_players[self.name] = False
-                        self.server.players[self.name] = self
-                    list_room = [room.name for room in self.server.rooms.values() if
-                                 not room.is_active and len(room.players) < 2]
-                    self.send_pickle({'type': 'rooms', 'body': list_room})
+                case 'user':
+                    self.name, self.field = data['body']
+                    self.server.fields[str(self.field)].queue.put(self)
 
     def send_pickle(self, data):
         serialized_data = pickle.dumps(data)
@@ -44,6 +58,25 @@ class PlayerThread(Thread):
             self.send_pickle({"type": "chat", "body": "Неверный ввод, повторите попытку:"})
             return False
         return True
+class Field(Thread):
+    def __init__(self, size):
+        super().__init__()
+        self.queue = SimpleQueue()
+        match size:
+            case 3:
+                self.words = ["кот", "дом", "мир", "сок", "лес", "топ", "шум", "пес", "дар", "сто", "мир", "зло"]
+            case 5:
+                self.words = ["кошка", "книга", "птица", "кнопка", "доска", "карта", "спорт", "топор", "ласка"]
+            case 7:
+                self.words = ["парашют", "планета", "счетчик"]
+        self.start()
+    def run(self):
+        while True:
+            if self.queue.qsize() >= 2:
+                client1 = self.queue.get()
+                client2 = self.queue.get()
+                GameRoom({client1.name: client1.sock, client2.name: client2.sock})
+
 
 class Server:
     def __init__(self, host, port):
@@ -53,12 +86,14 @@ class Server:
         self.sock.listen()
         print('Сервер запущен...')
 
+        self.fields = {"3": Field(3), "5":Field(5), "7": Field(7)}
+
     def serve_forever(self):
         while True:
             client_sock, client_addr = self.sock.accept()
             print(f"Подключен клиент: {client_addr}")
-            #client_thread = ClientThread(client_sock, client_addr, self.rooms)
+            ClientThread(client_sock, client_addr, self)
 
 if __name__ == "__main__":
-    server = Server(host='127.0.0.1', port=12345)
+    server = Server(host='127.0.0.1', port=12348)
     server.serve_forever()

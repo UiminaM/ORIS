@@ -37,12 +37,37 @@ def create_user():
 
         conn = get_db_connection()
         conn.execute('INSERT INTO passwords (login, password) VALUES (?, ?)', (login, password))
+        conn.execute(('INSERT INTO user_profile (login) VALUES (?)'), (login,))
         conn.commit()
         conn.close()
 
         return redirect(url_for('get_users'))
 
     return render_template('create.html')
+
+@app.route('/<string:login>/edit_user', methods=('GET', 'POST'))
+def edit_user(login):
+    conn = get_db_connection()
+    user = conn.execute('SELECT * FROM passwords WHERE login = ?', (login,)).fetchone()
+
+    if request.method == 'POST':
+        new_login = request.form.get('login')
+        new_password = request.form.get('password')
+
+        conn.execute('UPDATE passwords SET login = ?, password = ? WHERE login = ?', (new_login, new_password, login))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('get_users'))
+
+    return render_template('edit_user.html', user=user)
+@app.route('/<login>/delete_user', methods=('POST',))
+def delete_user(login):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM passwords WHERE login = ?', (login,))
+    conn.commit()
+    conn.close()
+    flash('Пользователь был удален.')
+    return redirect(url_for('get_users'))
 
 @app.route('/create_tag', methods=('GET', 'POST'))
 def create_tag():
@@ -83,7 +108,7 @@ def form_authorization():
        if result[0] != Password:
            return render_template("authorization.html", error_message='Неверный пароль!')
 
-       cursor_db.execute('SELECT role FROM passwords WHERE login = ?', (Login,))
+       cursor_db.execute('SELECT role FROM user_profile WHERE login = ?', (Login,))
        role = cursor_db.fetchone()[0]
 
        session['username'] = Login
@@ -94,6 +119,7 @@ def form_authorization():
 
        return redirect(url_for('home'))
    return render_template('authorization.html')
+
 
 @app.route('/logout')
 def logout():
@@ -114,12 +140,16 @@ def form_registration():
 
        db_lp = sqlite3.connect('login_password.db')
        cursor_db = db_lp.cursor()
-       sql_insert = '''INSERT INTO passwords VALUES('{}','{}');'''.format(Login, Password)
-       cursor_db.execute(sql_insert)
+
+       cursor_db.execute('INSERT INTO passwords (login, password) VALUES(?, ?)', (Login, Password))
+       cursor_db.execute(('INSERT INTO user_profile (login) VALUES (?)'), (Login,))
+
        cursor_db.close()
        db_lp.commit()
        db_lp.close()
-       return render_template('successfulregis.html')
+       session['username'] = Login
+       session['role'] = 'user'
+       return redirect(url_for('home'))
    return render_template('registration.html')
 
 if __name__ == "__main__":

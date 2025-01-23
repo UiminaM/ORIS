@@ -1,6 +1,7 @@
 import sqlite3
 db_lp = sqlite3.connect('login_password.db')
 cursor_db = db_lp.cursor()
+cursor_db.execute('''DROP TABLE passwords''')
 
 sql_create = '''CREATE TABLE IF NOT EXISTS passwords (
     login TEXT PRIMARY KEY,
@@ -8,13 +9,19 @@ sql_create = '''CREATE TABLE IF NOT EXISTS passwords (
 );'''
 
 cursor_db.execute(sql_create)
-cursor_db.execute('''ALTER TABLE passwords ADD COLUMN role TEXT''')
 
-sql_create2 = '''CREATE TABLE IF NOT EXISTS tags (
-    name TEXT PRIMARY KEY,
-    count TEXT NOT NULL
-);'''
-cursor_db.execute(sql_create2)
+cursor_db.execute('''
+            CREATE TABLE IF NOT EXISTS user_profile (
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                email TEXT,
+                role TEXT DEFAULT 'user',
+                login TEXT NOT NULL,
+                FOREIGN KEY (login) REFERENCES passwords(login) ON DELETE CASCADE
+)
+''')
+
+cursor_db.execute('PRAGMA foreign_keys = ON')
 db_lp.commit()
 
 cursor_db.close()

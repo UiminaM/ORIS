@@ -1,17 +1,17 @@
 {% extends 'users.html' %}
 
 {% block content %}
-    <h1>Создать нового пользователя</h1>
+    <h1>Редактировать пользователя</h1>
     <form method="POST">
         <div class="mb-3">
             <label for="login" class="form-label">Логин</label>
-            <input class="form-control" type="text" id="login" name="login" required>
+            <input class="form-control" type="text" id="login" name="login" value="{{ user['login'] }}" required>
         </div>
         <div class="mb-3">
             <label for="password" class="form-label">Пароль</label>
-            <textarea type="password" class="form-control" id="password" name="password" required></textarea>
+            <input class="form-control" type="text" id="password" name="password" value="{{ user['password'] }}" required>
         </div>
-        <button type="submit" class="btn btn-success">Создать</button>
+        <button type="submit" class="btn btn-success">Сохранить</button>
         <a href="{{ url_for('home') }}" class="btn btn-secondary">Назад</a>
     </form>
 {% endblock %}

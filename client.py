@@ -13,14 +13,17 @@ from PyQt6 import QtGui
 
 ALPHABIT = list('АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ')
 STATUSES = {0: 'Выберите букву и вставьте ее \nв свободную клетку.',
-            1: 'Покажите слово от первой \nдо последней буквы. Для отмены \nнажмите правой кнопкой мыши.',
+            1: 'Покажите слово от первой \nдо последней буквы.',
             2: 'Конец игры.'}
 class Communication(QObject):
-    chat_signal = pyqtSignal(str)
-    game_signal = pyqtSignal(int, int, str)
-    start_game_signal = pyqtSignal(list)
+    guide_signal = pyqtSignal(str)
+    #game_signal = pyqtSignal(int, int, str)
+    start_game_signal = pyqtSignal(list, str)
     end_game_signal = pyqtSignal()
-    timer_signal = pyqtSignal(int)
+    description_signal = pyqtSignal(str)
+    player_change_signal = pyqtSignal(list, dict)
+    new_letter_signal = pyqtSignal(list)
+    #timer_signal = pyqtSignal(int)
 class BeginingWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -82,12 +85,13 @@ class BeginingWindow(QWidget):
             name = self.lineEdit.text()
             field = int(self.choice.currentText()[0])
             self.socket.queue.put({'type': 'user', 'body': [name, field]})
-            self.wait_window = WaitWindow(self.communication, self.socket, field, self)
+            self.wait_window = WaitWindow(name, self.communication, self.socket, field, self)
             self.hide()
 
 class WaitWindow(QWidget):
-    def __init__(self, communication, socket, field,  begin_window):
+    def __init__(self, name, communication, socket, field,  begin_window):
         super().__init__()
+        self.name = name
         self.communication = communication
         self.begin_window = begin_window
         self.socket = socket
@@ -110,28 +114,29 @@ class WaitWindow(QWidget):
         self.communication.start_game_signal.connect(self.open_game_window)
         self.show()
 
-    def open_game_window(self, players):
-        print("open game win")
-        window.__init__(players, self.socket, self.field, self.begin_window)
+    def open_game_window(self, players, word):
+        window.__init__(players, self.name, self.socket, self.field, word, self.communication, self.begin_window)
         window.show()
         self.hide()
 
 
 class GameWindow(QMainWindow):
-    def __init__(self, players=['player1','player2'], socket=None, field=0, begin_window: BeginingWindow=None):
+    def __init__(self, players=['player1','player2'], name='', socket=None, field=0, word='', communication=None, begin_window: BeginingWindow=None):
         super().__init__()
         self.socket = socket
+        self.name = name
+        self.communication = communication
         self.begin_window = begin_window
         self.players = players
-        self.field_size = field  # размер поля
+        self.field_size = field
+        self.first_word = word
         self.remembered_alphabit_letter = None  # последняя выбранная из алфавита буква
         self.current_word = []  # текущее набираемое слово
         self.game_status = STATUSES[0]  # текущий статус игры
         self.current_player = 0  # чей ход
-        self.p_counts = [0, 0]  # счет игры
-        self.p_words = {0: [], 1: []}  # все веденные слова
 
-        self.field = Field(self.generate_word(), self.field_size)  # создание поля
+        self.setWindowTitle(self.name)
+        self.field = Field(self.first_word, self.field_size)  # создание поля
         self.setGeometry(50, 100, 800, 600)
 
 
@@ -150,7 +155,7 @@ class GameWindow(QMainWindow):
         self.word_description.setMaximumSize(self.width() // 2, 250)
 
         self.counts = QLabel(self)
-        self.counts.setText(str(self.p_counts[0]) + ' : ' + str(self.p_counts[1]))
+        self.counts.setText(str('0 : 0'))
         self.counts.setFont(QFont('Arial', 30))
 
         # Надписи и кнопки
@@ -180,6 +185,7 @@ class GameWindow(QMainWindow):
         self.pass_move_btn.setMinimumSize(100, 50)
         self.pass_move_btn.clicked.connect(self.pass_move)
 
+
         self.new_game_btn = QPushButton(self)
         self.new_game_btn.setText('Начать заново')
         self.new_game_btn.setMinimumSize(100, 50)
@@ -198,9 +204,9 @@ class GameWindow(QMainWindow):
 
         self.main_vb.addLayout(self.upper_hb)
         self.upper_hb.addLayout(self.game_field_vb)
-        #self.game_field_vb.addStretch(1)
+        self.game_field_vb.addStretch(1)
         self.game_field_vb.addWidget(self.field)
-        #self.game_field_vb.addStretch(1)
+        self.game_field_vb.addStretch(1)
         self.upper_hb.addStretch(1)
         self.upper_hb.addLayout(self.btn_vb)
         self.upper_hb.addStretch(1)
@@ -231,8 +237,12 @@ class GameWindow(QMainWindow):
 
 
         self.init_alphabit()  # Создание алфавита
-        self.set_guide()  # Установка надписи-руководства
-
+        self.set_guide()
+        if self.communication != None:
+            self.communication.player_change_signal.connect(self.player_change)
+            self.communication.guide_signal.connect(self.set_error)
+            self.communication.description_signal.connect(self.set_description)
+            self.communication.new_letter_signal.connect(self.add_new_letter)
 
     def init_alphabit(self):  # алфавит
         a = QWidget(self)  # Create a new QWidget to hold the alphabet buttons
@@ -248,6 +258,7 @@ class GameWindow(QMainWindow):
                 font.setPointSize(20)
                 font.setWeight(20)
                 new.setFont(font)
+                new.setStyleSheet('background-color: #faeccd')
                 new.clicked.connect(self.alphabit_letter_is_pressed)  # Connect button click
                 a.grid.addWidget(new, x, y)  # Add button to the grid layout
 
@@ -255,13 +266,9 @@ class GameWindow(QMainWindow):
 
     def alphabit_letter_is_pressed(self):
         if self.remembered_alphabit_letter:  # убираем выделение с последней запомненной буквы
-            self.remembered_alphabit_letter.setStyleSheet('background-color: #FFCFB1')
+            self.remembered_alphabit_letter.setStyleSheet('background-color: #faeccd')
         self.remembered_alphabit_letter = self.sender()  # запоминаем последнюю введенную букву
         self.sender().setStyleSheet('background-color: #FF9A5C')
-
-    def generate_word(self):  # с помощью словаря-базы данных выбираем случайное слово для начала игры
-
-        return "КАРТА"
 
     def set_guide(self):
         self.guide_label.setText(self.game_status)
@@ -274,57 +281,42 @@ class GameWindow(QMainWindow):
                 self.add_word_btn.show()  # показываем "ввести слово", если выделена хоть одна буква
                 self.add_word_btn.setText(''.join([x.letter for x in self.current_word]))
                 self.delete_word_btn.setEnabled(True)  # доступ к кнопке - удалению слова
+    def set_error(self, text):
+        self.guide_label.setText(text)
+        self.guide_label.update()
+        self.delete_word()
+
+    def add_new_letter(self, new_letter):
+        print('add_new_letter')
+        self.field.orig_cells_objects[new_letter[1]][new_letter[2]].set_letter(new_letter[0])
+    def set_description(self, des):
+        self.word_description.setPlainText(des)
+        self.word_description.update()
 
     def make_a_move(self):  # проверяет и делает ход
         if self.game_status == STATUSES[1]:
             word = ''.join(j.letter for j in self.current_word)  # введенное слово
-            if self.check_word(word):  # если прошло проверку
-                self.p_counts[self.current_player] += len(word)  # обновление счета
-                self.p_words[self.current_player].append(word)  # списка слов
-                self.set_description(word.lower())  # значение последнего слова
-                self.player_change()  # меняем игрока
-                self.game_over()  # проверка на окончание игры
-            else:  # слово не прошло проверку
-                if self.field.last_letter not in self.current_word:
-                    text = 'Слово должно содержать новую букву!'
-                elif word in self.p_words[0] or word in self.p_words[1] or word == self.first_word:
-                    text = 'Такое слово уже было!\nПридумайте новое.'
-                else:
-                    text = 'Извините, данного слова нет в \nсловаре. Попробуйте ввести другое.'
-                self.guide_label.setText(text)
-                self.guide_label.update()
-                self.delete_word()
-    def check_word(self, word):  # проверка слова
-        global cur
-        result = cur.execute("""SELECT * FROM words
-                    WHERE word = ?""", (word,)).fetchone()  # поиск слова в морфологическом словаре
-        global cur2
-        result_2 = cur2.execute("""SELECT * FROM ozhigov
-                    WHERE word = ?""", (word.lower(),)).fetchone()  # поиск слова в толковом словаре
-        if (result or result_2) and word not in self.p_words[0] and word not in self.p_words[
-            1] and word != self.first_word and self.field.last_letter in self.current_word:  # нет ли слова в уже введенных и есть ли в нем последняя буква
-            return True
-        return False
+            if self.field.last_letter not in self.current_word:
+                self.set_error('Слово должно содержать новую букву!')
+            else:
+                self.socket.queue.put({'type': 'word', 'body': [word, self.field.last_letter.letter, self.field.last_letter.x, self.field.last_letter.y]})
 
-    def update_table(self):  # обновление таблицы слов
-        self.table.setRowCount(len(self.p_words[0]))
-        self.table.setItem(len(self.p_words[0]) - 1, self.current_player,
-                           QTableWidgetItem(self.p_words[self.current_player][len(self.p_words[0]) - 1]))
 
-    def player_change(self):  # смена игрока
-        if not self.current_word:
-            self.p_words[self.current_player].append('-')  # если пропускает ход
-        self.update_table()
-        self.counts.setText(str(self.p_counts[0]) + ' : ' + str(self.p_counts[1]))
-        if self.current_player == 0:  # смена номера игрока
-            self.current_player = 1
-        else:
-            self.current_player = 0
+    def update_table(self, p_words):  # обновление таблицы слов, настроить сигнал
+        self.table.setRowCount(len(p_words[0]))
+        self.table.setItem(len(p_words[0]) - 1, self.current_player,
+                           QTableWidgetItem(p_words[self.current_player][len(p_words[0]) - 1]))
+
+    def player_change(self, p_counts, p_words):
+        self.update_table(p_words)
+        self.counts.setText(str(p_counts[0]) + ' : ' + str(p_counts[1]))
+        self.current_player = 1 - self.current_player
         self.field.last_letter = None  # сброс промежуточных введений
         self.delete_word()
         self.field.orig_cells_objects = self.field.cells_objects  # обновляем массив клеток
-        self.remembered_alphabit_letter.setStyleSheet('background-color: #ffcfb1')  # сброс выделения в алфавите
-        self.remembered_alphabit_letter = None
+        if self.remembered_alphabit_letter:  # убираем выделение с последней запомненной буквы
+            self.remembered_alphabit_letter.setStyleSheet('background-color: #faeccd')
+            self.remembered_alphabit_letter = None
         self.now_move.setText('Сейчас ход: ' + self.players[self.current_player])
         self.delete_letter_btn.setEnabled(False)
         self.game_status = STATUSES[0]
@@ -338,6 +330,8 @@ class GameWindow(QMainWindow):
         self.delete_letter_btn.setEnabled(False)
 
     def delete_word(self):  # сброс вводимого слова
+        if self.field.last_letter != None:
+            self.field.last_letter.reset()
         self.current_word = []
         self.field.reset_map()
         self.field.update()
@@ -347,17 +341,7 @@ class GameWindow(QMainWindow):
     def pass_move(self):  # пропуск хода
         if self.field.last_letter:
             self.delete_letter()
-        self.player_change()
-
-    def set_description(self, word):  # добавление определения слова
-        global cur2
-        result_2 = cur2.execute("""SELECT * FROM ozhigov
-                               WHERE word = ?""", (word.lower(),)).fetchone()
-        if result_2:
-            des = ' '.join(str(result_2[2][2:]).split('\\n'))
-            self.word_description.setPlainText(des)
-        else:
-            self.word_description.setPlainText('Извините, данное слово отсутсвует в толковом словаре.')
+        self.socket.queue.put({'type': 'pass_move'})
 
     def game_over(self):  # проверка и действие при окончании игры
         if all(z.is_letter for z in [self.field.orig_cells_objects[x][y] for x in range(self.field_size) for y in
@@ -509,7 +493,8 @@ class Cell(QWidget):  # класс для клеток с буквами
         elif window.game_status == STATUSES[1]:
             if (e.button() == Qt.MouseButton.LeftButton):  # выделение клетки (добавление буквы к текущему слову)
                 self.highlighting()
-            if (e.button() == Qt.MouseButton.LeftButton):  # удаление клетки из текущего слова
+                print('highlighting')
+            elif (e.button() == Qt.MouseButton.LeftButton):  # удаление клетки из текущего слова
                 if self.is_filled and self == window.current_word[len(window.current_word) - 1]:
                     window.current_word = window.current_word[:len(window.current_word) - 1]
                     self.is_filled = False
@@ -518,11 +503,12 @@ class Cell(QWidget):  # класс для клеток с буквами
                     window.delete_letter()
 
         window.set_guide()
+
 class Socket(QObject):
-    def __init__(self, host, port, gui_communication):
+    def __init__(self, host, port, communication):
         super().__init__()
         self.queue = SimpleQueue()
-        self.gui_communication = gui_communication
+        self.communication = communication
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.connect((host, port))
 
@@ -538,19 +524,19 @@ class Socket(QObject):
                 message = pickle.loads(data)
                 type = message['type']
 
-                if type == 'chat':
-                    self.gui_communication.chat_updating_signal.emit(message['body'])
-                elif type == 'ban':
-                    self.gui_communication.ban_signal.emit()
-                elif type == 'rooms':
-                    self.rooms = message['body']
-                    self.gui_communication.room_updating_signal.emit(self.rooms)
+                if type == 'guide':
+                    self.communication.guide_signal.emit(message['body'])
                 elif type == 'start_game':
-                    names = message['body']
-                    print(names)
-                    self.gui_communication.start_game_signal.emit(names)
-                elif type == 'end_game':
-                    self.gui_communication.end_signal.emit()
+                    names = message['body'][:2]
+                    word = message['body'][-1]
+                    self.communication.start_game_signal.emit(names, word)
+                elif type == 'description':
+                    self.communication.description_signal.emit(message['body'])
+                elif type == 'new_letter':
+                    self.communication.new_letter_signal.emit(message['body'])
+                elif type == 'player_change':
+                    p_count, p_words = message['body']
+                    self.communication.player_change_signal.emit(p_count, p_words)
                 else:
                     continue
             except Exception as e:

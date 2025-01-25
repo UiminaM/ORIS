@@ -4,7 +4,6 @@ from threading import Thread
 import pickle
 import random
 from queue import SimpleQueue
-import time
 
 
 class GameRoom:
@@ -33,7 +32,6 @@ class GameRoom:
                      self.field[x][y] = word[y]
 
     def broadcast(self, type, message="", exclude_client=None):
-        print(type)
         for player in list(self.players.values()):
             if player != exclude_client:
                 try:
@@ -69,7 +67,6 @@ class ClientThread(Thread):
             if not data:
                 break
             data = pickle.loads(data)
-            print(data['type'])
             match data['type']:
                 case 'user':
                     self.name, self.field = data['body']
@@ -133,9 +130,9 @@ class Field(Thread):
         self.queue = SimpleQueue()
         match size:
             case 3:
-                self.words = ["КОТ", "ДОМ", "МИР", "СОК", "ЛЕС", "ТОП", "ШУМ", "ПЕС", "ДАР", "СТО", "МИР", "ЗЛО"]
+                self.words = ["ДАР"]
             case 5:
-                self.words = ["КОШКА", "ПТИЦА", "ДОСКА", "СПОРТ", "ТОПОР", "ЛАСКА"]
+                self.words = ["СПОРТ", "ТОПОР", "ЛАСКА"]
             case 7:
                 self.words = ["ПАРАШЮТ", "ПЛАНЕТА", "СЧЕТЧИК"]
         self.start()
@@ -151,14 +148,13 @@ class Field(Thread):
 class Server:
     def __init__(self, host, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((host, port))
         self.sock.listen()
         print('Сервер запущен...')
 
         self.fields = {"3": Field(3), "5": Field(5), "7": Field(7)}
 
-    def serve_forever(self):
+    def start_server(self):
         while True:
             client_sock, client_addr = self.sock.accept()
             print(f"Подключен клиент: {client_addr}")
@@ -167,5 +163,5 @@ class Server:
 
 if __name__ == "__main__":
     server = Server(host='127.0.0.1', port=12348)
-    server.serve_forever()
+    server.start_server()
 

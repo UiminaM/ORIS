@@ -44,20 +44,15 @@ class Socket(QObject):
                     continue
                 message = pickle.loads(data)
                 type = message['type']
-                print(type)
                 if type == 'guide':
-                    print(message['body'])
                     self.communication.guide_signal.emit(message['body'])
                 elif type == 'start_game':
-                    print(message['body'])
                     names = message['body'][:2]
                     word = message['body'][-1]
                     self.communication.start_game_signal.emit(names, word)
                 elif type == 'description':
-                    print(message['body'])
                     self.communication.description_signal.emit(message['body'])
                 elif type == 'new_letter':
-                    print(message['body'])
                     self.communication.new_letter_signal.emit(message['body'])
                 elif type == 'start_timer':
                     self.communication.timer_signal.emit()
@@ -67,7 +62,6 @@ class Socket(QObject):
                     p_count, p_words = message['body']
                     self.communication.game_over_signal.emit(p_count, p_words)
                 elif type == 'player_change':
-                    print(message['body'])
                     p_count, p_words = message['body']
                     self.communication.player_change_signal.emit(p_count, p_words)
                 else:
@@ -262,7 +256,6 @@ class Cell(QWidget):
         elif window.game_status == STATUSES[1]:
             if (e.button() == Qt.MouseButton.LeftButton):
                 self.highlighting()
-                print('highlighting')
             elif (e.button() == Qt.MouseButton.LeftButton):
                 if self.is_filled and self == window.current_word[len(window.current_word) - 1]:
                     window.current_word = window.current_word[:len(window.current_word) - 1]
@@ -494,7 +487,7 @@ class GameWindow(QMainWindow):
         self.word_description.update()
 
     def add_new_letter(self, new_letter):
-        print('add_new_letter')
+        print("add_new_letter")
         self.field.orig_cells_objects[new_letter[1]][new_letter[2]].set_letter(new_letter[0])
 
     def update_table(self, p_words):
@@ -503,7 +496,7 @@ class GameWindow(QMainWindow):
                            QTableWidgetItem(p_words[self.current_player][len(p_words[0]) - 1]))
 
     def start_timer(self):
-        self.timer.start(30000)
+        self.timer.start(60000)
 
     def end_timer(self):
         self.timer.stop()

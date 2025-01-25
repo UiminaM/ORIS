@@ -22,6 +22,7 @@
             {% endif %}
             {% if session.get('username') %}
 <!--                <span style="color: #ffffff">Привет, {{ session['username'] }}!</span>-->
+                <a href="{{ url_for('get_user_posts') }}">Мои посты</a>
                 <a class="login" href="{{ url_for('logout') }}">Выйти</a>
                 <a class="login" href="{{ url_for('account') }}">Личный кабинет</a>
             {% else %}

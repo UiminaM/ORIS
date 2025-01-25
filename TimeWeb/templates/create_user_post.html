@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать пост</title>
+</head>
+<body>
+    <h1>Создать пост</h1>
+
+    <!-- Flash-сообщения -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul>
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Форма для создания поста -->
+    <form method="POST" enctype="multipart/form-data">
+        <label for="title">Заголовок:</label><br>
+        <input type="text" id="title" name="title" required><br><br>
+
+        <label for="content">Содержимое:</label><br>
+        <textarea id="content" name="content" required></textarea><br><br>
+
+        <label for="tag">Тег:</label><br>
+        <input type="text" id="tag" name="tag"><br><br>
+
+<!--        <label for="tag">Тег:</label><br>-->
+<!--        <select id="tag" name="tag">-->
+<!--            <option value="" disabled selected>Выберите тег</option>-->
+<!--            {% for tag in tags %}-->
+<!--                <option value="{{ tag[0] }}">{{ tag[1] }}</option>-->
+<!--            {% endfor %}-->
+<!--        </select><br><br>-->
+
+        <label for="image">Изображение:</label><br>
+        <input type="file" id="image" name="image"><br><br>
+
+        <button type="submit">Создать пост</button>
+    </form>
+
+    <!-- Ссылка на просмотр постов -->
+    <br>
+</body>
+</html>

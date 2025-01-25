@@ -3,9 +3,15 @@ import os
 from flask import Flask, request, render_template, session, redirect, url_for, flash
 import sqlite3
 
+from werkzeug.utils import secure_filename
+
 app = Flask(__name__)
 
 app.secret_key = os.urandom(24)
+
+UPLOAD_FOLDER = 'static/uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def get_db_connection():
     conn = sqlite3.connect('login_password.db')
     # Возвращаем строки как "словари"
@@ -13,7 +19,14 @@ def get_db_connection():
     return conn
 @app.route("/")
 def home():
-    return render_template("index.html")
+    conn = get_db_connection()
+    posts_data = conn.execute('''
+                        SELECT posts.post_id, title, content, image_path, user_profile.login
+                        FROM posts
+                        INNER JOIN user_profile ON posts.user_id = user_profile.user_id
+                    ''').fetchall()
+    conn.close()
+    return render_template('index.html', posts=posts_data)
 
 @app.route("/about")
 def about():
@@ -29,6 +42,20 @@ def get_users():
     users = conn.execute('SELECT * FROM passwords').fetchall()
     conn.close()
     return render_template('users.html', users=users)
+
+@app.route("/user_posts")
+def get_user_posts():
+    conn = get_db_connection()
+
+    post_data = conn.execute('''
+                SELECT posts.post_id, title, content, image_path, user_profile.login
+                FROM posts
+                INNER JOIN user_profile ON posts.user_id = user_profile.user_id
+                WHERE user_profile.login = ?
+                ''', (session['username'],)).fetchall()
+    conn.close()
+    return render_template('user_posts.html', posts=post_data)
+
 @app.route('/create_user', methods=('GET', 'POST'))
 def create_user():
     if request.method == 'POST':
@@ -110,9 +137,15 @@ def form_authorization():
 
        cursor_db.execute('SELECT role FROM user_profile WHERE login = ?', (Login,))
        role = cursor_db.fetchone()[0]
+       # print(role)
 
+       cursor_db.execute('SELECT user_id FROM user_profile WHERE login = ?', (Login,))
+       user_id = cursor_db.fetchone()[0]
+
+       # Сохраняем данные в сессии только после успешной авторизации
        session['username'] = Login
        session['role'] = role
+       session['user_id'] = user_id
 
        # Закрываем подключение к базе данных
        cursor_db.close()
@@ -120,17 +153,74 @@ def form_authorization():
        return redirect(url_for('home'))
    return render_template('authorization.html')
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/create_user_post', methods=('GET', 'POST'))
+def create_user_post():
+    # conn = sqlite3.connect('blog.db')
+    # cursor = conn.cursor()
+    #
+    # # Получение списка тегов из таблицы "tags"
+    # tags = cursor.execute('SELECT tag_id, name FROM tags').fetchall()  # Возвращает список кортежей (id, name)
+    #
+    # conn.close()
+
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        tag = request.form.get('tag')
+        user_id = session['user_id']
+        file = request.files.get('image')
+        image_path = None
+        if file and allowed_file(file.filename):
+
+            safe_filename = secure_filename(file.filename)
+            upload_path = f'static/uploads/{safe_filename}'
+
+            file.save(upload_path)
+            image_path = upload_path
+        try:
+            conn = sqlite3.connect('blog.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+                            INSERT INTO posts (user_id, title, content, image_path, tag)
+                            VALUES (?, ?, ?, ?, ?)
+                        ''', (user_id, title, content, image_path, tag))
+
+            conn.commit()
+            conn.close()
+
+            flash('Пост успешно добавлен!', 'success')
+            return redirect(url_for('get_user_posts'))
+        except Exception as e:
+            flash(f'Ошибка при добавлении поста: {str(e)}', 'danger')
+    return render_template('create_user_post.html')
 
 @app.route('/logout')
 def logout():
-    # Удаляем имя пользователя из сессии (выход из аккаунта)
     session.pop('username', None)
-    session.clear()  # Очистка всех данных сессии
+    session.clear()
     return redirect(url_for('home'))
 
 @app.route('/account', methods=('GET', 'POST'))
 def account():
-    return render_template('account.html')
+    conn = get_db_connection()
+    current_login = session['username']
+    user = conn.execute('SELECT login, name, email FROM user_profile WHERE login = ?', (current_login,)).fetchone()
+
+    if request.method == 'POST':
+        # login = request.form.get('login')
+        name = request.form.get('name')
+        email = request.form.get('email')
+
+        conn.execute('UPDATE user_profile SET name = ?, email = ? WHERE login = ?', (name, email, current_login))
+        conn.commit()
+        conn.close()
+        flash('Данные успешно обновлены')
+        return redirect(url_for('account'))
+
+    return render_template('account.html', user=user)
 
 @app.route('/registration', methods=['GET', 'POST'])
 def form_registration():

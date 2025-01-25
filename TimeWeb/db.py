@@ -21,6 +21,17 @@ cursor_db.execute('''
 )
 ''')
 
+cursor_db.execute('''
+            CREATE TABLE IF NOT EXISTS posts (
+                post_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                image_path TEXT, 
+                FOREIGN KEY (user_id) REFERENCES user_profile (user_id) ON DELETE CASCADE
+            )
+''')
+
 cursor_db.execute('PRAGMA foreign_keys = ON')
 db_lp.commit()
 

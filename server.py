@@ -80,9 +80,9 @@ class ClientThread(Thread):
                         self.send_pickle({'type': 'guide', 'body': 'Такое слово уже было!\nПридумайте новое.'})
                     elif self.check_word(word, cur, cur2):
                         self.send_pickle({'type': 'end_timer'})
-                        self.room.p_counts[self.room.current_player] += len(word)  # обновление счета
-                        self.room.p_words[self.room.current_player].append(word)  # списка слов
-                        self.get_description(word.lower(), cur2)  # значение последнего слова
+                        self.room.p_counts[self.room.current_player] += len(word)
+                        self.room.p_words[self.room.current_player].append(word)
+                        self.get_description(word.lower(), cur2)
                         self.room.current_player = 1 - self.room.current_player
                         self.room.broadcast('player_change', [self.room.p_counts, self.room.p_words])
                         self.room.field[new_letter[1]][new_letter[2]] = new_letter[0]
@@ -108,10 +108,10 @@ class ClientThread(Thread):
 
     def check_word(self, word, cur, cur2):
         result = cur.execute("""SELECT * FROM words
-                    WHERE word = ?""", (word,)).fetchone()  # поиск слова в морфологическом словаре
+                    WHERE word = ?""", (word,)).fetchone()
         result_2 = cur2.execute("""SELECT * FROM ozhigov
-                    WHERE word = ?""", (word.lower(),)).fetchone()  # поиск слова в толковом словаре
-        if result or result_2:  # нет ли слова в уже введенных и есть ли в нем последняя буква
+                    WHERE word = ?""", (word.lower(),)).fetchone()
+        if result or result_2:
             return True
         return False
 

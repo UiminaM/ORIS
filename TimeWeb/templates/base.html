@@ -1,4 +1,3 @@
-<!--В базовом шаблоне создаётся общий каркас документа, который включает навигационную панель и определяет область для вставки уникального контента.-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +7,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename= 'css/index.css') }}"> <!-- Пример подключения стилей -->
 </head>
 <body>
-    <!-- Навигационная панель -->
     <nav>
         <div class="topnav">
             <a class="active" href="{{ url_for('home') }}">Главная</a>
@@ -32,7 +30,6 @@
         </div>
     </nav>
 
-    <!-- Основной блок страницы -->
     <main>
         <div style="padding-left:16px">
             {% block content %}

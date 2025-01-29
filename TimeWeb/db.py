@@ -1,5 +1,5 @@
 import sqlite3
-db_lp = sqlite3.connect('login_password.db')
+db_lp = sqlite3.connect('blog.db')
 cursor_db = db_lp.cursor()
 cursor_db.execute('''DROP TABLE passwords''')
 

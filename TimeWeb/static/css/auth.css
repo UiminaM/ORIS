@@ -1,18 +1,23 @@
 body {
-    background-color: #add8e6; /* Голубой фон */
+    background-color: #add8e6;
 }
 
 form {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
     font: 14px Stem-Regular, arial, sans-serif;
-    border: none; /* Убираем рамку у формы */
+    border: none;
     -webkit-border-radius: 20px;
     color: #777991;
     width: 25%;
     margin-right: auto;
     margin-left: auto;
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.8); /* Полупрозрачный белый фон */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Объемный эффект */
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 input[type=text], input[type=password] {
@@ -24,7 +29,7 @@ input[type=text], input[type=password] {
     margin-right: auto;
     margin-left: auto;
     display: block;
-    border: none; /* Убираем рамку у полей ввода */
+    border: none;
     box-sizing: border-box;
     font: 14px Stem-Regular, arial, sans-serif;
     color: #777991;
@@ -46,12 +51,20 @@ button:hover {
     opacity: 0.9;
 }
 
+.reg a {
+    color: #777991;
+    text-decoration: none;
+}
+
+.reg a:hover {
+    color: #3354a6; /* Цвет текста при наведении */
+}
 .container {
     padding: 20px;
 }
 
 .error-message {
-    color: red; /* Change to your desired color */
-    margin-bottom: 15px; /* Space below the error message */
-    font-weight: bold; /* Make it bold */
+    color: red;
+    margin-bottom: 15px;
+    font-weight: bold;
 }

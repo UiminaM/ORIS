@@ -85,7 +85,7 @@ class BeginingWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.communication = Communication()
-        self.socket = Socket('127.0.0.1', 12348, self.communication)
+        self.socket = Socket('127.0.0.1', 12345, self.communication)
 
         self.setGeometry(100, 100, 480, 380)
         self.setFixedSize(480, 360)
@@ -553,9 +553,9 @@ class GameWindow(QMainWindow):
             winner = p_counts.index(max(p_counts))
             text = 'Поздравляем, ' + self.players[winner] + '!\nВы победили!'
         self.now_move.setText(text)
-        the_best_word = max(p_words[0] + p_words[1], key=len)  # определение самого длинного слова
+        the_best_word = max(p_words[0] + p_words[1], key=len)
         self.guide_label.setText(f'\nЛучшее слово за игру:\n{the_best_word}')
-        self.delete_word_btn.hide()  # убираем ненужные кнопки
+        self.delete_word_btn.hide()
         self.delete_letter_btn.hide()
         self.add_word_btn.hide()
         self.pass_move_btn.hide()

@@ -13,8 +13,8 @@ class GameRoom:
         self.first_word = first_word
         self.create_field(first_word)
 
-        self.p_counts = [0, 0]  # счет игры
-        self.p_words = {0: [], 1: []}  # все веденные слова
+        self.p_counts = [0, 0]
+        self.p_words = {0: [], 1: []}
         self.current_player = 0
 
         self.start_game()
@@ -158,10 +158,10 @@ class Server:
         while True:
             client_sock, client_addr = self.sock.accept()
             print(f"Подключен клиент: {client_addr}")
-            ClientThread(client_sock, client_addr, self)  # Передаем курсоры в поток клиента
+            ClientThread(client_sock, client_addr, self)
 
 
 if __name__ == "__main__":
-    server = Server(host='127.0.0.1', port=12348)
+    server = Server(host='127.0.0.1', port=12345)
     server.start_server()
 

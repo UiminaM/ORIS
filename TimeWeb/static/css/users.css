@@ -1,0 +1,70 @@
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #1f1d1d;
+}
+h1 {
+    color: #5c5857;
+}
+
+.card-body {
+    background-color: #2e2b2a;
+    border: none; /* Убираем рамку */
+    padding: 5px;
+    padding-left: 20px;
+    margin: 10px 0;
+    margin-right: 15px;
+    position: relative;
+    border-radius: 20px; /* Устанавливаем радиус закругления */
+    color: white;
+}
+
+ul {
+    list-style-type: none; /* Убирает маркеры списка */
+    padding: 0; /* Убирает внутренние отступы */
+    margin: 0; /* Убирает внешние отступы */
+}
+
+
+.create_user {
+    text-decoration: none;
+    position: absolute; /* Или absolute, в зависимости от контекста */
+    top: 70px;
+    right: 15px;
+    color: white;
+    font-size: 17px;
+    background-color: #fa5114;
+    padding: 10px 15px;
+    border-radius: 30px;
+    display: inline-block;
+    transition: background-color 0.3s;
+}
+
+.create_user: hover {
+    opacity: 0.9;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px; /* расстояние между кнопками */
+    margin-top: 10px; /* отступ сверху для разделения с текстом пароля */
+}
+
+.edit {
+    text-decoration: none;
+    color: #fa5114;
+    padding-top: 7px;
+    display: inline-block; /* сделаем элемент блочным для правильного отображения */
+}
+
+.delete{
+    text-decoration: none;
+    background-color: #fa5114;
+    color: white;
+    outline: none;
+    border: none;
+    font-size: 15px;
+    border-radius: 15px;
+    padding: 10px 15px; /* добавим немного отступов для кнопки */
+    display: inline-block; /* сделаем элемент блочным для правильного отображения */
+}

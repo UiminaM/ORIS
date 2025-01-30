@@ -22,12 +22,22 @@ def get_db_connection():
 def home():
     conn = get_db_connection()
     posts_data = conn.execute('''
-                        SELECT posts.post_id, title, content, image_path, user_profile.login
-                        FROM posts
-                        INNER JOIN user_profile ON posts.user_id = user_profile.user_id
-                    ''').fetchall()
+                SELECT
+                    posts.post_id,
+                    posts.title,
+                    posts.content,
+                    posts.image_path,
+                    user_profile.login,
+                    GROUP_CONCAT(tags.name, ', ') AS tags -- Группируем теги через запятую
+                FROM posts
+                INNER JOIN user_profile ON posts.user_id = user_profile.user_id
+                LEFT JOIN post_tags ON posts.post_id = post_tags.post_id
+                LEFT JOIN tags ON post_tags.tag_id = tags.id
+                GROUP BY posts.post_id -- Группируем данные по ID поста
+            ''').fetchall()
     conn.close()
     return render_template('main/index.html', posts=posts_data)
+
 
 @app.route("/about")
 def about():
@@ -48,14 +58,23 @@ def get_users():
 def get_user_posts():
     conn = get_db_connection()
 
-    post_data = conn.execute('''
-                SELECT posts.post_id, title, content, image_path, user_profile.login
-                FROM posts
-                INNER JOIN user_profile ON posts.user_id = user_profile.user_id
-                WHERE user_profile.login = ?
-                ''', (session['username'],)).fetchall()
+    posts_data = conn.execute('''
+               SELECT
+                   posts.post_id,
+                   posts.title,
+                   posts.content,
+                   posts.image_path,
+                   user_profile.login,
+                   GROUP_CONCAT(tags.name, ', ') AS tags
+               FROM posts
+               INNER JOIN user_profile ON posts.user_id = user_profile.user_id
+               LEFT JOIN post_tags ON posts.post_id = post_tags.post_id
+               LEFT JOIN tags ON post_tags.tag_id = tags.id
+               WHERE user_profile.login = ?
+               GROUP BY posts.post_id, user_profile.login
+           ''', (session['username'],)).fetchall()
     conn.close()
-    return render_template('user_post/user_posts.html', posts=post_data)
+    return render_template('user_post/user_posts.html', posts=posts_data)
 
 @app.route('/create_user', methods=('GET', 'POST'))
 def create_user():
@@ -91,6 +110,7 @@ def edit_user(login):
 def delete_user(login):
     conn = get_db_connection()
     conn.execute('DELETE FROM passwords WHERE login = ?', (login,))
+    conn.execute('DELETE FROM user_profile WHERE login = ?', (login,))
     conn.commit()
     conn.close()
     flash('Пользователь был удален.')
@@ -152,32 +172,44 @@ def allowed_file(filename):
 
 @app.route('/create_user_post', methods=('GET', 'POST'))
 def create_user_post():
-    conn = sqlite3.connect('blog.db')
-    cursor = conn.cursor()
-    tags = cursor.execute('SELECT name FROM tags').fetchall()  # Возвращает список кортежей (id, name)
-    conn.close()
-
     if request.method == 'POST':
+        # Получение данных из формы
         title = request.form.get('title')
         content = request.form.get('content')
-        tag = request.form.get('tag')
-        user_id = session['user_id']
-        file = request.files.get('image')
+        selected_tags = request.form.getlist('tags')  # Получаем список выбраных тегов
+        user_id = session.get('user_id')
+        file = request.files.get('image')  # Получение загружаемого файла
+
+        # Обработка загружаемого файла
         image_path = None
+        # проверяется, существует ли файл (file) и соответствует ли его имя установленным требованиям (например, расширения файла).
         if file and allowed_file(file.filename):
-
             safe_filename = secure_filename(file.filename)
+            # Указываем безопасный путь для сохранения файла
+            # Все действия с файлом теперь происходят только через безопасное имя safe_filename.
             upload_path = f'static/uploads/{safe_filename}'
-
             file.save(upload_path)
+
+            # Сохраняем путь к файлу в переменную для дальнейшего использования
             image_path = upload_path
+
+            # Сохранение в SQLite
         try:
             conn = sqlite3.connect('blog.db')
             cursor = conn.cursor()
+
+            # Вставляем новые данные в таблицу posts
             cursor.execute('''
-                            INSERT INTO posts (user_id, title, content, image_path)
-                            VALUES (?, ?, ?, ?)
-                        ''', (user_id, title, content, image_path))
+                                INSERT INTO posts (user_id, title, content, image_path)
+                                VALUES (?, ?, ?, ?)
+                            ''', (user_id, title, content, image_path))
+
+            post_id = cursor.lastrowid  # Получаем ID созданного поста
+            for tag_id in selected_tags:
+                cursor.execute('''
+                                            INSERT INTO post_tags (post_id, tag_id)
+                                            VALUES (?, ?)
+                                        ''', (post_id, tag_id))
 
             conn.commit()
             conn.close()
@@ -186,7 +218,15 @@ def create_user_post():
             return redirect(url_for('get_user_posts'))
         except Exception as e:
             flash(f'Ошибка при добавлении поста: {str(e)}', 'danger')
-    return render_template('user_post/create_user_post.html')
+
+        # Динамически загружаем доступные теги
+
+
+    conn = get_db_connection()
+    tags = conn.execute('SELECT id, name FROM tags').fetchall()
+    conn.close()
+
+    return render_template('user_post/create_user_post.html', tags=tags)
 
 @app.route('/logout')
 def logout():

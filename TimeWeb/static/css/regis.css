@@ -1,5 +1,5 @@
 body {
-    background-color: #add8e6;
+    background-color: #1f1d1d;
 }
 
 form {
@@ -16,8 +16,7 @@ form {
     margin-right: auto;
     margin-left: auto;
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 input[type=text], input[type=password] {
@@ -30,14 +29,16 @@ input[type=text], input[type=password] {
     margin-left: auto;
     display: block;
     border: none;
+    outline: none;
     box-sizing: border-box;
     font: 14px Stem-Regular, arial, sans-serif;
-    color: #777991;
+    color: white;
+    background-color: #3d3a39;
 }
 
 button {
-    font: 16px Stem-medium, arial, sans-serif;
-    background-color: #3354a6;
+    font: 15px Stem-medium, arial, sans-serif;
+    background-color: #fa5114;
     -webkit-border-radius: 30px;
     color: white;
     padding: 16px 20px;
@@ -53,4 +54,5 @@ button:hover {
 
 .container {
     padding: 20px;
+    color: #5c5857;
 }

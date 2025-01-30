@@ -27,16 +27,14 @@
         <label for="content">Содержимое:</label><br>
         <textarea id="content" name="content" required></textarea><br><br>
 
-        <label for="tag">Тег:</label><br>
-        <input type="text" id="tag" name="tag"><br><br>
-
-<!--        <label for="tag">Тег:</label><br>-->
-<!--        <select id="tag" name="tag">-->
-<!--            <option value="" disabled selected>Выберите тег</option>-->
-<!--            {% for tag in tags %}-->
-<!--                <option value="{{ tag[0] }}">{{ tag[1] }}</option>-->
-<!--            {% endfor %}-->
-<!--        </select><br><br>-->
+        <label for="tags">Выберите теги</label>
+<!--        Поле <select id="tags" name="tags" multiple> позволяет выбрать несколько тегов,
+name="tags" — значение передается как массив, и его нужно будет обрабатывать в маршруте,-->
+        <select id="tags" name="tags" multiple size="5">
+            {% for tag in tags %}
+                <option value="{{ tag['id'] }}">{{ tag['name'] }}</option>
+            {% endfor %}
+        </select><br><br>
 
         <label for="image">Изображение:</label><br>
         <input type="file" id="image" name="image"><br><br>

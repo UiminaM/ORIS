@@ -3,21 +3,26 @@
 {% block title %}Главная страница сайта{% endblock %}
 
 {% block content %}
-<h1>Главная страница сайта</h1>
-<h2>Здесь видны все посты пользователей</h2>
-<p>Some content..</p>
+<h1>Все посты</h1>
 <ul>
-    {% for post in posts %}
-        <li>
-            <h2>{{ post['title'] }} (Автор: {{ post['login'] }})</h2>
-            <p>{{ post['content'] }}</p>
-            {% if post['tag'] %}
-                <p>Тег: {{ post['tag'] }}</p>  <!-- Добавил вывод тега -->
-            {% endif %}  <!-- Закрываем блок if для post['tag'] -->
-            {% if post['image_path'] %}
-                <img src="{{ post['image_path'] }}" alt="Картинка поста" width="300">
-            {% endif %}  <!-- Закрываем блок if для post['image_path'] -->
-        </li>
-    {% endfor %}
+{% for post in posts %}
+    <li class="post-block">
+        <div class="post-header">
+            <span class="post-author">Автор: {{ post['login'] }}</span>
+        </div>
+        <h2>{{ post['title'] }}</h2>
+        <p>{{ post['content'] }}</p>
+        {% if post['image_path'] %}
+            <img src="{{ post['image_path'] }}" alt="Картинка поста" width="300">
+        {% endif %}
+        {% if post['tags'] %}
+            <p>
+            {% for tag in post['tags'].split(', ') %} <!-- Разбиваем строку на список -->
+                <span class="tag">{{ tag }}</span> <!-- Оранжевый фон -->
+            {% endfor %}
+            </p>
+        {% endif %}
+    </li>
+{% endfor %}
 </ul>
 {% endblock %}
